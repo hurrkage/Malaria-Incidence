@@ -1,0 +1,35 @@
+#!/bin/bash
+if [[ -z $1 ]]
+then
+    1>&2 echo "Error: No argument"
+    exit 2
+fi
+
+#Cleaning Data for user queries to be same as the data itself
+arg=$(echo $1 | tr "[:upper:]" "[:lower:]" | tr -d ' ')
+tail -n +2 incedenceOfMalaria.csv | tr -d ' ' |  tr "[:upper:]" "[:lower:]" >> cleansed_incedenceOfMalaria.txt
+
+#Test case whether argument exists in file
+if [[ $(grep -c $arg cleansed_incedenceOfMalaria.txt) -eq 0 ]]
+then
+    echo "Argument does not exist"
+    exit 1
+else
+    grep $arg cleansed_incedenceOfMalaria.txt > country.txt
+    country=$(cut -d, -f1 country.txt | head -n1)
+    if [[ $1 =~ ^[[:digit:]]{1,4}$ ]]
+    then
+        max_incidence=$(cut -d, -f4 country.txt | sort -nr | head -n1)
+        max_country=$(sort -t , -k 4nr country.txt | head -n1 | cut -d, -f1)
+        max_period=$(cut -d, -f3 country.txt | head -n1)
+        echo "For the year $max_period, the country with the highest incidence was $max_country, with a rate of $max_incidence per 1,000"
+    else
+        max_incidence=$(cut -d, -f4 country.txt | sort -nr |  head -n1)
+        max_country=$country 
+        max_period=$(sort -t , -k 4nr country.txt | cut -d, -f3 | head -n1)
+        echo "For the country $max_country, the year with the highest incidence was $max_period, with a rate of $max_incidence per 1,000"
+
+    fi
+fi
+rm cleansed_incedenceOfMalaria.txt
+rm country.txt
